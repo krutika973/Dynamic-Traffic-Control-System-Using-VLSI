@@ -1,0 +1,96 @@
+module DynamicTrafficControl (
+    input clk,                    // System clock
+    input reset,                  // Reset signal
+    input sound_sensor,           // High when emergency vehicle is detected
+    input [1:0] ir_sensor,        // 2-bit road density (00: low, 01: medium, 10: high, 11: very high)
+    input violation_detected,     // High when a traffic violation is detected
+    output reg [1:0] traffic_light_ns,  // Traffic light for North-South (00: Red, 01: Yellow, 10: Green)
+    output reg [1:0] traffic_light_ew,  // Traffic light for East-West (00: Red, 01: Yellow, 10: Green)
+    output reg camera_trigger     // High to capture traffic violations
+);
+
+// State definitions for traffic lights
+localparam RED    = 2'b00,
+           YELLOW = 2'b01,
+           GREEN  = 2'b10;
+
+// Variables
+reg [3:0] timer;                 // Timer for light transitions
+reg priority_mode;               // Flag for emergency vehicle priority
+
+// Traffic control logic
+always @(posedge clk or posedge reset) begin
+    if (reset) begin
+        // Reset all states
+        traffic_light_ns <= RED;
+        traffic_light_ew <= GREEN;
+        timer <= 0;
+        priority_mode <= 0;
+        camera_trigger <= 0;
+    end else begin
+        // Emergency vehicle detection
+        if (sound_sensor) begin
+            priority_mode <= 1;
+            traffic_light_ns <= GREEN;
+            traffic_light_ew <= RED;
+        end else begin
+            priority_mode <= 0;
+        end
+
+        // Normal operation if no priority mode
+        if (!priority_mode) begin
+            case (ir_sensor)
+                2'b00: begin // Low density
+                    if (timer < 5) begin
+                        traffic_light_ns <= GREEN;
+                        traffic_light_ew <= RED;
+                    end else begin
+                        traffic_light_ns <= RED;
+                        traffic_light_ew <= GREEN;
+                    end
+                end
+                2'b01: begin // Medium density
+                    if (timer < 8) begin
+                        traffic_light_ns <= GREEN;
+                        traffic_light_ew <= RED;
+                    end else begin
+                        traffic_light_ns <= RED;
+                        traffic_light_ew <= GREEN;
+                    end
+                end
+                2'b10: begin // High density
+                    if (timer < 10) begin
+                        traffic_light_ns <= GREEN;
+                        traffic_light_ew <= RED;
+                    end else begin
+                        traffic_light_ns <= RED;
+                        traffic_light_ew <= GREEN;
+                    end
+                end
+                2'b11: begin // Very high density
+                    if (timer < 12) begin
+                        traffic_light_ns <= GREEN;
+                        traffic_light_ew <= RED;
+                    end else begin
+                        traffic_light_ns <= RED;
+                        traffic_light_ew <= GREEN;
+                    end
+                end
+            endcase
+        end
+
+        // Increment timer and reset if it exceeds maximum
+        timer <= timer + 1;
+        if (timer >= 15)
+            timer <= 0;
+
+        // Traffic violation detection
+        if (violation_detected) begin
+            camera_trigger <= 1;  // Activate camera to capture violation
+        end else begin
+            camera_trigger <= 0;  // Deactivate camera
+        end
+    end
+end
+
+endmodule
