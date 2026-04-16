@@ -57,16 +57,6 @@ The system uses VLSI technology to process data from sensors such as IR sensors 
 - Support for autonomous vehicles  
 - Smart city implementation  
 
-## 📸 Project Images
-
-### Block Diagram
-![Block Diagram](block_diagram.png)
-
-### Flowchart
-![Flowchart](flowchart.png)
-
-### Output / Result
-![Output](output.png)
 
 ## 📚 References
 - IEEE Papers on Traffic Control Systems  
